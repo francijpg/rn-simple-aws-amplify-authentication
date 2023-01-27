@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -7,28 +7,40 @@ import {
   useWindowDimensions,
   ScrollView,
   TextInput,
+  Alert,
 } from 'react-native';
-import Logo from '../../../assets/images/Logo_1.png';
+import Logo from '../../../assets/images/logo.png';
 import CustomInput from '../../components/CustomInput';
 import CustomButton from '../../components/CustomButton';
 import SocialSignInButtons from '../../components/SocialSignInButtons';
-import {useNavigation} from '@react-navigation/native';
-import {useForm, Controller} from 'react-hook-form';
+import { useNavigation } from '@react-navigation/native';
+import { useForm, Controller } from 'react-hook-form';
+import { Auth } from 'aws-amplify';
 
 const SignInScreen = () => {
-  const {height} = useWindowDimensions();
+  const { height } = useWindowDimensions();
   const navigation = useNavigation();
+  const [loading, setLoading] = useState(false);
 
   const {
     control,
     handleSubmit,
-    formState: {errors},
+    formState: { errors },
   } = useForm();
 
-  const onSignInPressed = data => {
-    console.log(data);
-    // validate user
-    navigation.navigate('Home');
+  const onSignInPressed = async data => {
+    if (loading) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await Auth.signIn(data.username, data.password);
+      console.log(response);
+    } catch (e) {
+      Alert.alert('Oops', e.message);
+    }
+    setLoading(false);
   };
 
   const onForgotPasswordPressed = () => {
@@ -44,7 +56,7 @@ const SignInScreen = () => {
       <View style={styles.root}>
         <Image
           source={Logo}
-          style={[styles.logo, {height: height * 0.3}]}
+          style={[styles.logo, { height: height * 0.3 }]}
           resizeMode="contain"
         />
 
@@ -52,7 +64,7 @@ const SignInScreen = () => {
           name="username"
           placeholder="Username"
           control={control}
-          rules={{required: 'Username is required'}}
+          rules={{ required: 'Username is required' }}
         />
 
         <CustomInput
@@ -69,7 +81,10 @@ const SignInScreen = () => {
           }}
         />
 
-        <CustomButton text="Sign In" onPress={handleSubmit(onSignInPressed)} />
+        <CustomButton
+          text={loading ? 'Loading...' : 'Sign In'}
+          onPress={handleSubmit(onSignInPressed)}
+        />
 
         <CustomButton
           text="Forgot password?"
@@ -95,9 +110,11 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   logo: {
-    width: '70%',
-    maxWidth: 300,
-    maxHeight: 200,
+    width: '50%',
+    maxWidth: 150,
+    maxHeight: 150,
+    borderRadius: 100,
+    marginBottom: 10,
   },
 });
 
